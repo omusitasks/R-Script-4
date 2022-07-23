@@ -1,0 +1,291 @@
+---
+title: "BUAN 573 Individual Assignment, Week 6"
+author: "Your Name"
+date: '`r format(Sys.Date(), "%B %d, %Y")`'
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message=FALSE, warning=FALSE)
+```
+
+
+
+```{r, echo=FALSE, warning=FALSE}
+# Some housekeeping code
+rm(list=ls()) # # remove all the variables in the environment
+RNGkind(sample.kind="Rounding") # set the random number generator kind
+
+#Color Format (any color)
+colr = function(x,color){
+  outputFormat = knitr::opts_knit$get("rmarkdown.pandoc.to")
+  if(outputFormat == 'latex')
+    paste("\\textcolor{",color,"}{",x,"}",sep="")
+  else if(outputFormat == 'html')
+    paste("<font color='",color,"'>",x,"</font>",sep="")
+  else
+    x
+}
+
+#Color Format (green color)
+green = function(x){
+  outputFormat = knitr::opts_knit$get("rmarkdown.pandoc.to")
+  if(outputFormat == 'latex')
+    paste("\\textcolor{green}{",x,"}",sep="")
+  else if(outputFormat == 'html')
+    paste("<font color='green'>",x,"</font>",sep="")
+  else
+    x
+}
+```
+
+**Competitive Auctions on Ebay**  The file *eBayAuctions.csv* contains information on 1972 auctions transacted on eBay.com during May–June 2004. The goal is to use these data to build a model that will distinguish competitive auctions from noncompetitive ones. A competitive auction is defined as an auction with at least two bids placed on the item being auctioned. The data include variables that describe the item (auction category), the seller (his or her eBay rating), and the auction terms that the seller selected (auction duration, opening price, currency, day of week of auction close). In addition, we have the price at which the auction closed. The goal is to predict whether or not an auction of interest will be competitive.
+
+ a. Load the eBayAuctions.csv file into R and and convert the categorical variables into factors. The
+categorical variables are Category (18 categories), currency (USD, GBP, Euro), endDay (Monday–
+Sunday), and Duration (1, 3, 5, 7, or 10 days).
+
+## answer
+```{r, echo=FALSE, warning=FALSE}
+#library to read csv dataset
+library(readr)
+
+#read the eBayAuctions.csv dataset
+eBay.data <- read.csv("C:/Users/o/Downloads/eBayAuctions.csv")
+
+#get top data
+head(eBay.data)
+```
+
+
+```{r, echo=FALSE, warning=FALSE}
+#get the summary of the data to check the data format of each variable
+# library to load the glimpse function
+library(dplyr)
+
+# Chech if the format of each variable                       
+glimpse(eBay.data)
+```
+
+```{r, echo=FALSE, warning=FALSE}
+# Convert character columns to factor                          
+eBay.data$Category <- as.factor(eBay.data$Category)
+eBay.data$currency <- as.factor(eBay.data$currency)
+eBay.data$endDay <- as.factor(eBay.data$endDay)
+eBay.data$Duration <- as.factor(eBay.data$Duration)
+```
+
+
+```{r, echo=FALSE, warning=FALSE}
+# library to load the glimpse function
+library(dplyr)
+
+# Chech if the conversion was successful  using glimpse                        
+glimpse(eBay.data)
+
+#woow successful
+```
+
+  b. Using the `aggregate()` function of the base R package, create pivot tables for the mean of the binary outcome (Competitive) as a function of various categories within each categorical variable. Use the information in the tables to reduce the number of categories that will be used in the model. For example, conceptually related categories that appear most similar with respect to the distribution of competitive auctions could be combined.
+#answer
+
+```{r, echo=FALSE, warning=FALSE}
+# library to load the glimpse function
+library(dplyr)
+
+# apply aggregate() function to come up with the pivot table.  
+
+
+# Aggregate function to find mean summary statistics of categorical variables
+
+#find mean points scored, grouped by team and conference
+category.mean  <- aggregate(Competitive ~  Duration + Category + endDay + currency, data = eBay.data, FUN = mean, na.rm = TRUE)
+
+category.mean 
+```
+
+```{r, echo=FALSE, warning=FALSE}
+# library to load the glimpse function
+library(dplyr)
+
+# apply aggregate() function to come up with the pivot table.  
+
+
+# Aggregate function to find mean summary statistics of categorical variables
+
+category.mean <- aggregate(eBay.data$Competitive,by=list(eBay.data$currency),FUN=mean, na.rm=TRUE)
+category.mean 
+```
+
+
+```{r, echo=FALSE, warning=FALSE}
+# library to load the glimpse function
+library(dplyr)
+
+# apply aggregate() function to come up with the pivot table.  
+
+
+# Aggregate function to find mean summary statistics of categorical variables
+
+category.mean <- aggregate(eBay.data$Competitive,by=list(eBay.data$endDay),FUN=mean, na.rm=TRUE)
+category.mean 
+```
+
+
+```{r, echo=FALSE, warning=FALSE}
+# library to load the glimpse function
+library(dplyr)
+
+# apply aggregate() function to come up with the pivot table.  
+
+
+# Aggregate function to find mean summary statistics of categorical variables
+
+category.mean <- aggregate(eBay.data$Competitive,by=list(eBay.data$Category),FUN=mean, na.rm=TRUE)
+category.mean 
+```
+  c. Split the data into training (60%) and validation (40%) datasets. Run a logistic model with all predictors on the training set. Report the estimated coefficients.
+#answer
+```{r, echo=FALSE, warning=FALSE}
+
+# Splitting data into Train and Test  (60%) and validation (40%) datasets
+
+
+## 60% of the sample size
+smp_size <- floor(0.6 * nrow(eBay.data))
+
+## set the seed to make your partition reproducible
+set.seed(123)
+train_ind <- sample(seq_len(nrow(eBay.data)), size = smp_size)
+
+train.data <- eBay.data[train_ind, ]
+test.data <- eBay.data[-train_ind, ]
+```
+
+
+
+```{r, echo=FALSE, warning=FALSE}
+# fit the model
+model <- glm( Competitive ~ currency + Duration + endDay + Category + OpenPrice + ClosePrice + sellerRating, data = train.data, family = binomial)
+summary(model)
+
+```
+  d. Interpret the meaning of the coefficient for closing price. Does closing price have a practical significance? Is it statistically significant for predicting competitiveness of auctions? (Use a 10% significance level.)
+# answer
+
+```{r, echo=FALSE, warning=FALSE}
+## (Use a 10% significance level.)
+summary(model)$coef
+
+```
+  e. Using the validation data, obtain the propensities of auctions being competitive, P(Competitive = 1). Report the head of the prediction vector.
+#answer
+```{r, echo=FALSE, warning=FALSE}
+## P(Competitive = 1) using validation dataset
+
+predicted <- predict(model, test.data, type = 'response')
+
+## Report the head of the prediction vector.
+head(predicted)
+```
+  f. Create a new data frame with the first column equal to the "Competitive" column of the validation set, second column equal to the predicted propensities, and third column equal 1 if the propensity > 0.5 and 0 otherwise. Report the head of this new data frame.
+#answer
+```{r, echo=FALSE, warning=FALSE}
+## New dataset
+
+new.data.frame <- data.frame(test.data$Competitive, predicted)
+
+new.data.frame
+```
+  g. Using the `confusionMatrix()` function of the **caret** package, create, report, and interpret the values of the confusion matrix of your classifier. Report your predictor's accuracy and error rates.
+#answer
+```{r, echo=FALSE, warning=FALSE}
+#load necessary packages
+library(caret)
+#confusionMatrix(train.data$Competitive,
+#predict(model,train.data))
+```
+
+  h. The exercises above, assumes the cutoff probability = 0.5. Is this the best cutoff probability? Plot the accuracy rate against different cutoff probabilities. What cutoff probability maximizes the accuracy of the your classifier?
+#answer
+```{r, echo=FALSE, warning=FALSE}
+#install.packages("InformationValue")
+#install.packages("ISLR")
+
+#load necessary packages
+library(caret)
+library(InformationValue)
+library(ISLR)
+
+#find optimal cutoff probability to use to maximize accuracy
+optimal <- optimalCutoff(test.data$Competitive, predicted)[1]
+optimal
+```
+  i. Obtain and interpret the sensitivity and specificity measures of your classifier.
+#answer
+```{r, echo=FALSE, warning=FALSE}
+#calculate sensitivity
+sensitivity(test.data$Competitive, predicted)
+
+
+#calculate specificity
+specificity(test.data$Competitive, predicted)
+
+
+#calculate total misclassification error rate
+misClassError(test.data$Competitive, predicted, threshold=optimal)
+
+```
+  j. Using **ggplot**, produce the lift chart of the classifier. To compare, also plot the lift charts of perfect and ignorant classifiers.
+#answer
+```{r, echo=FALSE, warning=FALSE}
+library(ggplot2)
+
+library(ROCR)
+
+pred_test <- predict(model,test.data,type="response")
+
+ROCR_pred_test <- prediction(pred_test,test.data$Competitive)
+
+ROCR_perf_test <- performance(ROCR_pred_test,'tpr','fpr')
+ROCR_perf_test
+
+###Plot Lift chart
+perf <- performance(ROCR_pred_test,"lift","rpp")
+plot(perf, main="Lift curve", colorize=T)  
+```
+  k. Using **ggplot** produce and interpret the decile chart of the classifier.
+#answer
+```{r, echo=FALSE, warning=FALSE}
+library(ggplot2)
+
+g = ggplot(eBay.data, aes(x =eBay.data$ClosePrice , y=eBay.data$Competitive)) + geom_point()
+print(g)
+
+print({ gcol_dec = g + aes(colour=eBay.data$Competitive) })
+```
+  l. Use stepwise selection (use function stepAIC() in the MASS package with `direction="both"`) to find the model with the best fit to the training data. Which predictors are used?
+# answer
+```{r, echo=FALSE, warning=FALSE}
+require(MASS)
+
+fit1_LM <- stepAIC(model, direction = 'both')
+
+###Which predictors are used?
+##Currency + Duration + endDay + Category + OpenPrice + 
+    #ClosePrice + sellerRating
+```
+  m. Obtain the confusion matrix, accuracy (error) rate, sensitivity, and specificity of the best-fit model (from the question above) evaluated using two different sets of data, the training and validation sets (use 0.5 cutoff probability). What is the danger of using the best model trained on the training set to make predictions on the training set.
+# answer
+```{r, echo=FALSE, warning=FALSE}
+#load necessary packages
+library(caret)
+#confusionMatrix(test.data$Competitive,
+#predict(model,test.data))
+```
+  n. Explain why the best-fitting model and the best predictive models may be different.
+# answer
+```{r, echo=FALSE, warning=FALSE}
+### This is because predictive models acts as a guide in choosing the Best-fitting model that always different
+```
+
